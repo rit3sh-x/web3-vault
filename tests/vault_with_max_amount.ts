@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { describe, it, beforeAll, expect } from "vitest";
 import { Keypair, PublicKey, SystemProgram } from "@solana/web3.js";
 import BN from "bn.js";
 import { program, provider, setup, sendTransaction } from "./utils";
@@ -16,7 +16,7 @@ describe("vault with max amount", () => {
 
     const maxAmount = 1_000_000_000;
 
-    before(async () => {
+    beforeAll(async () => {
         user = await setup();
 
         [vaultStatePda, stateBump] = PublicKey.findProgramAddressSync(
@@ -47,13 +47,13 @@ describe("vault with max amount", () => {
 
         const vaultStateAccount = await program.account.vaultState.fetch(vaultStatePda);
 
-        expect(vaultStateAccount.vaultBump).to.equal(vaultBump);
-        expect(vaultStateAccount.stateBump).to.equal(stateBump);
-        expect(vaultStateAccount.maxAmount?.toNumber()).to.equal(maxAmount);
+        expect(vaultStateAccount.vaultBump).toBe(vaultBump);
+        expect(vaultStateAccount.stateBump).toBe(stateBump);
+        expect(vaultStateAccount.maxAmount?.toNumber()).toBe(maxAmount);
 
         userBalanceAfterInitialize = await provider.connection.getBalance(user.publicKey);
 
-        expect(userBalanceAfterInitialize).to.be.lessThan(userStartingBalance);
+        expect(userBalanceAfterInitialize).toBeLessThan(userStartingBalance);
     });
 
     it("allows a deposit below the max amount", async () => {
@@ -73,8 +73,8 @@ describe("vault with max amount", () => {
 
         const vaultBalance = await provider.connection.getBalance(vaultPda);
 
-        expect(vaultBalance).to.equal(depositAmount.toNumber());
-        expect(await provider.connection.getBalance(user.publicKey)).to.be.lessThan(
+        expect(vaultBalance).toBe(depositAmount.toNumber());
+        expect(await provider.connection.getBalance(user.publicKey)).toBeLessThan(
             userBalanceAfterInitialize - depositAmount.toNumber(),
         );
     });
@@ -98,8 +98,8 @@ describe("vault with max amount", () => {
         const vaultBalance = await provider.connection.getBalance(vaultPda);
         userBalanceAfterWithdraw = await provider.connection.getBalance(user.publicKey);
 
-        expect(vaultBalance).to.equal(depositAmount.toNumber() - withdrawAmount.toNumber());
-        expect(userBalanceAfterWithdraw).to.be.lessThan(
+        expect(vaultBalance).toBe(depositAmount.toNumber() - withdrawAmount.toNumber());
+        expect(userBalanceAfterWithdraw).toBeLessThan(
             userBalanceAfterInitialize - depositAmount.toNumber() + withdrawAmount.toNumber(),
         );
     });
@@ -120,9 +120,9 @@ describe("vault with max amount", () => {
 
         await sendTransaction(user, tx);
 
-        expect(await provider.connection.getBalance(vaultPda)).to.equal(0);
-        expect(await provider.connection.getAccountInfo(vaultStatePda)).to.equal(null);
-        expect(await provider.connection.getBalance(user.publicKey)).to.be.lessThan(
+        expect(await provider.connection.getBalance(vaultPda)).toBe(0);
+        expect(await provider.connection.getAccountInfo(vaultStatePda)).toBeNull();
+        expect(await provider.connection.getBalance(user.publicKey)).toBeLessThan(
             userBalanceAfterWithdraw + vaultStateBalanceBeforeClose + vaultBalanceBeforeClose,
         );
     });
@@ -170,8 +170,8 @@ describe("vault with max amount", () => {
             thrownError = error;
         }
 
-        expect(thrownError).to.exist;
-        expect(String(thrownError)).to.include("AmountTooMuch");
-        expect(String(thrownError)).to.include("0x1771");
+        expect(thrownError).toBeDefined();
+        expect(String(thrownError)).toContain("AmountTooMuch");
+        expect(String(thrownError)).toContain("0x1771");
     });
 });

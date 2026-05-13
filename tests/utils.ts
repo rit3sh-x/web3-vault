@@ -1,6 +1,6 @@
 import * as anchor from "@anchor-lang/core";
 import { Program } from "@anchor-lang/core";
-import { Vault } from "../target/types/vault";
+import { Vault } from "@contracts/vault";
 import {
     Commitment,
     Keypair,
