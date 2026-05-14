@@ -1,35 +1,37 @@
-import { describe, it, beforeAll, expect } from "vitest";
-import { Keypair, PublicKey, SystemProgram } from "@solana/web3.js";
-import BN from "bn.js";
-import { program, provider, setup, sendTransaction } from "./utils";
+import { describe, it, beforeAll, expect } from "vitest"
+import { Keypair, PublicKey, SystemProgram } from "@solana/web3.js"
+import BN from "bn.js"
+import { program, provider, setup, sendTransaction } from "./utils"
 
 describe("vault without max amount", () => {
-    let user: Keypair;
-    let vaultStatePda: PublicKey;
-    let vaultPda: PublicKey;
-    let stateBump: number;
-    let vaultBump: number;
+    let user: Keypair
+    let vaultStatePda: PublicKey
+    let vaultPda: PublicKey
+    let stateBump: number
+    let vaultBump: number
 
-    let userStartingBalance: number;
-    let userBalanceAfterInitialize: number;
-    let userBalanceAfterWithdraw: number;
+    let userStartingBalance: number
+    let userBalanceAfterInitialize: number
+    let userBalanceAfterWithdraw: number
 
     beforeAll(async () => {
-        user = await setup();
+        user = await setup()
 
-        [vaultStatePda, stateBump] = PublicKey.findProgramAddressSync(
+        ;[vaultStatePda, stateBump] = PublicKey.findProgramAddressSync(
             [Buffer.from("state"), user.publicKey.toBuffer()],
-            program.programId,
-        );
+            program.programId
+        )
 
-        [vaultPda, vaultBump] = PublicKey.findProgramAddressSync(
+        ;[vaultPda, vaultBump] = PublicKey.findProgramAddressSync(
             [Buffer.from("vault"), vaultStatePda.toBuffer()],
-            program.programId,
-        );
-    });
+            program.programId
+        )
+    })
 
     it("initializes vault", async () => {
-        userStartingBalance = await provider.connection.getBalance(user.publicKey);
+        userStartingBalance = await provider.connection.getBalance(
+            user.publicKey
+        )
 
         const tx = await program.methods
             .initialize(null)
@@ -39,23 +41,26 @@ describe("vault without max amount", () => {
                 vault: vaultPda,
                 systemProgram: SystemProgram.programId,
             })
-            .transaction();
+            .transaction()
 
-        await sendTransaction(user, tx);
+        await sendTransaction(user, tx)
 
-        const vaultStateAccount = await program.account.vaultState.fetch(vaultStatePda);
+        const vaultStateAccount =
+            await program.account.vaultState.fetch(vaultStatePda)
 
-        expect(vaultStateAccount.vaultBump).toBe(vaultBump);
-        expect(vaultStateAccount.stateBump).toBe(stateBump);
-        expect(vaultStateAccount.maxAmount).toBeNull();
+        expect(vaultStateAccount.vaultBump).toBe(vaultBump)
+        expect(vaultStateAccount.stateBump).toBe(stateBump)
+        expect(vaultStateAccount.maxAmount).toBeNull()
 
-        userBalanceAfterInitialize = await provider.connection.getBalance(user.publicKey);
+        userBalanceAfterInitialize = await provider.connection.getBalance(
+            user.publicKey
+        )
 
-        expect(userBalanceAfterInitialize).toBeLessThan(userStartingBalance);
-    });
+        expect(userBalanceAfterInitialize).toBeLessThan(userStartingBalance)
+    })
 
     it("deposits into vault", async () => {
-        const depositAmount = new BN(1_000_000_000);
+        const depositAmount = new BN(1_000_000_000)
 
         const tx = await program.methods
             .deposit(depositAmount)
@@ -65,21 +70,21 @@ describe("vault without max amount", () => {
                 vault: vaultPda,
                 systemProgram: SystemProgram.programId,
             })
-            .transaction();
+            .transaction()
 
-        await sendTransaction(user, tx);
+        await sendTransaction(user, tx)
 
-        const vaultBalance = await provider.connection.getBalance(vaultPda);
+        const vaultBalance = await provider.connection.getBalance(vaultPda)
 
-        expect(vaultBalance).toBe(depositAmount.toNumber());
-        expect(await provider.connection.getBalance(user.publicKey)).toBeLessThan(
-            userBalanceAfterInitialize - depositAmount.toNumber(),
-        );
-    });
+        expect(vaultBalance).toBe(depositAmount.toNumber())
+        expect(
+            await provider.connection.getBalance(user.publicKey)
+        ).toBeLessThan(userBalanceAfterInitialize - depositAmount.toNumber())
+    })
 
     it("withdraws from vault", async () => {
-        const depositAmount = new BN(1_000_000_000);
-        const withdrawAmount = new BN(600_000_000);
+        const depositAmount = new BN(1_000_000_000)
+        const withdrawAmount = new BN(600_000_000)
 
         const tx = await program.methods
             .withdraw(withdrawAmount)
@@ -89,22 +94,30 @@ describe("vault without max amount", () => {
                 vault: vaultPda,
                 systemProgram: SystemProgram.programId,
             })
-            .transaction();
+            .transaction()
 
-        await sendTransaction(user, tx);
+        await sendTransaction(user, tx)
 
-        const vaultBalance = await provider.connection.getBalance(vaultPda);
-        userBalanceAfterWithdraw = await provider.connection.getBalance(user.publicKey);
+        const vaultBalance = await provider.connection.getBalance(vaultPda)
+        userBalanceAfterWithdraw = await provider.connection.getBalance(
+            user.publicKey
+        )
 
-        expect(vaultBalance).toBe(depositAmount.toNumber() - withdrawAmount.toNumber());
+        expect(vaultBalance).toBe(
+            depositAmount.toNumber() - withdrawAmount.toNumber()
+        )
         expect(userBalanceAfterWithdraw).toBeLessThan(
-            userBalanceAfterInitialize - depositAmount.toNumber() + withdrawAmount.toNumber(),
-        );
-    });
+            userBalanceAfterInitialize -
+                depositAmount.toNumber() +
+                withdrawAmount.toNumber()
+        )
+    })
 
     it("closes vault", async () => {
-        const vaultStateBalanceBeforeClose = await provider.connection.getBalance(vaultStatePda);
-        const vaultBalanceBeforeClose = await provider.connection.getBalance(vaultPda);
+        const vaultStateBalanceBeforeClose =
+            await provider.connection.getBalance(vaultStatePda)
+        const vaultBalanceBeforeClose =
+            await provider.connection.getBalance(vaultPda)
 
         const tx = await program.methods
             .close()
@@ -114,29 +127,35 @@ describe("vault without max amount", () => {
                 vault: vaultPda,
                 systemProgram: SystemProgram.programId,
             })
-            .transaction();
+            .transaction()
 
-        await sendTransaction(user, tx);
+        await sendTransaction(user, tx)
 
-        expect(await provider.connection.getBalance(vaultPda)).toBe(0);
-        expect(await provider.connection.getAccountInfo(vaultStatePda)).toBeNull();
-        expect(await provider.connection.getBalance(user.publicKey)).toBeLessThan(
-            userBalanceAfterWithdraw + vaultStateBalanceBeforeClose + vaultBalanceBeforeClose,
-        );
-    });
+        expect(await provider.connection.getBalance(vaultPda)).toBe(0)
+        expect(
+            await provider.connection.getAccountInfo(vaultStatePda)
+        ).toBeNull()
+        expect(
+            await provider.connection.getBalance(user.publicKey)
+        ).toBeLessThan(
+            userBalanceAfterWithdraw +
+                vaultStateBalanceBeforeClose +
+                vaultBalanceBeforeClose
+        )
+    })
 
     it("fails to withdraw from an empty vault", async () => {
-        const failingUser = await setup();
+        const failingUser = await setup()
 
         const [emptyVaultStatePda] = PublicKey.findProgramAddressSync(
             [Buffer.from("state"), failingUser.publicKey.toBuffer()],
-            program.programId,
-        );
+            program.programId
+        )
 
         const [emptyVaultPda] = PublicKey.findProgramAddressSync(
             [Buffer.from("vault"), emptyVaultStatePda.toBuffer()],
-            program.programId,
-        );
+            program.programId
+        )
 
         const initializeTx = await program.methods
             .initialize(null)
@@ -146,9 +165,9 @@ describe("vault without max amount", () => {
                 vault: emptyVaultPda,
                 systemProgram: SystemProgram.programId,
             })
-            .transaction();
+            .transaction()
 
-        await sendTransaction(failingUser, initializeTx);
+        await sendTransaction(failingUser, initializeTx)
 
         const withdrawTx = await program.methods
             .withdraw(new BN(1))
@@ -158,18 +177,18 @@ describe("vault without max amount", () => {
                 vault: emptyVaultPda,
                 systemProgram: SystemProgram.programId,
             })
-            .transaction();
+            .transaction()
 
-        let thrownError: unknown;
+        let thrownError: unknown
 
         try {
-            await sendTransaction(failingUser, withdrawTx);
+            await sendTransaction(failingUser, withdrawTx)
         } catch (error) {
-            thrownError = error;
+            thrownError = error
         }
 
-        expect(thrownError).toBeDefined();
-        expect(String(thrownError)).toContain("InsufficientFunds");
-        expect(String(thrownError)).toContain("0x1770");
-    });
-});
+        expect(thrownError).toBeDefined()
+        expect(String(thrownError)).toContain("InsufficientFunds")
+        expect(String(thrownError)).toContain("0x1770")
+    })
+})
