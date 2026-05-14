@@ -29,21 +29,19 @@ flowchart LR
 
 ## Program
 
-Program ID: `B49Bt2vVghKTjvr7DxwqZvbuPWgoTgQugVtWzufAr9EA`
-
 Instructions:
 
-| Instruction  | Args                  | Effect                                                    |
-| ------------ | --------------------- | --------------------------------------------------------- |
-| `initialize` | `max_amount: Option<u64>` | Creates the vault state PDA and the vault PDA for `user`. |
-| `deposit`    | `amount: u64`         | Transfers `amount` lamports from `user` to the vault.     |
-| `withdraw`   | `amount: u64`         | Transfers `amount` lamports from the vault back to `user`. |
-| `close`      | —                     | Drains the vault into `user` and closes the state PDA.    |
+| Instruction  | Args                      | Effect                                                     |
+| ------------ | ------------------------- | ---------------------------------------------------------- |
+| `initialize` | `max_amount: Option<u64>` | Creates the vault state PDA and the vault PDA for `user`.  |
+| `deposit`    | `amount: u64`             | Transfers `amount` lamports from `user` to the vault.      |
+| `withdraw`   | `amount: u64`             | Transfers `amount` lamports from the vault back to `user`. |
+| `close`      | —                         | Drains the vault into `user` and closes the state PDA.     |
 
 PDAs:
 
 - `vault_state` = `["state", user]`
-- `vault`       = `["vault", vault_state]`
+- `vault` = `["vault", vault_state]`
 
 ```mermaid
 flowchart LR
@@ -62,6 +60,7 @@ stateDiagram-v2
     Initialized --> Initialized: withdraw(amount)
     Initialized --> [*]: close()
 ```
+
 ## Running tests
 
 Tests use Vitest and require a running validator with the program deployed.
@@ -104,33 +103,33 @@ sequenceDiagram
 
 1. Start a local validator (pick one):
 
-   ```sh
-   solana-test-validator           # default
-   # or
-   surfpool                        # fork mainnet state locally
-   ```
+    ```sh
+    solana-test-validator
+    # or
+    surfpool
+    ```
 
 2. Deploy the program:
 
-   ```sh
-   anchor deploy
-   ```
+    ```sh
+    anchor deploy
+    ```
 
 3. Set the RPC endpoint and run the dev server:
 
-   ```sh
-   echo 'VITE_RPC_URL=http://127.0.0.1:8899' > .env.local
-   yarn dev
-   ```
+    ```sh
+    echo 'VITE_RPC_URL=http://127.0.0.1:8899' > .env.local
+    yarn dev
+    ```
 
 4. Open the printed URL, connect a wallet (Phantom etc. set to "Localnet"), and you should see your balance and the vault controls.
 
 ### Build / lint / format
 
 ```sh
-yarn build          # tsc -b && vite build
-yarn typecheck      # tsc -b only
-yarn lint           # eslint
-yarn format         # prettier --write .
-yarn format:check   # prettier --check .
+yarn build
+yarn typecheck
+yarn lint
+yarn format
+yarn format:check
 ```

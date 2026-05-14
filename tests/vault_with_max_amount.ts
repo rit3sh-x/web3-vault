@@ -18,12 +18,10 @@ describe("vault with max amount", () => {
 
     beforeAll(async () => {
         user = await setup()
-
         ;[vaultStatePda, stateBump] = PublicKey.findProgramAddressSync(
             [Buffer.from("state"), user.publicKey.toBuffer()],
             program.programId
         )
-
         ;[vaultPda, vaultBump] = PublicKey.findProgramAddressSync(
             [Buffer.from("vault"), vaultStatePda.toBuffer()],
             program.programId
