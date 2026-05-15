@@ -1,4 +1,4 @@
-use crate::{error::ErrorCode, state::VaultState, STATE_SEED, VAULT_SEED};
+use crate::{error::ErrorCode, events::Deposited, state::VaultState, STATE_SEED, VAULT_SEED};
 use anchor_lang::{
     prelude::*,
     system_program::{transfer, Transfer},
@@ -27,22 +27,33 @@ pub struct Deposit<'info> {
 
 impl<'info> Deposit<'info> {
     pub fn deposit(&mut self, amount: u64) -> Result<()> {
-        let account_balance = self.vault.lamports();
+        require!(amount > 0, ErrorCode::InvalidAmount);
+
+        let new_balance = self
+            .vault
+            .lamports()
+            .checked_add(amount)
+            .ok_or(ErrorCode::MathOverflow)?;
 
         if let Some(max_amount) = self.vault_state.max_amount {
-            require!(
-                amount + account_balance <= max_amount,
-                ErrorCode::AmountTooMuch
-            );
+            require!(new_balance <= max_amount, ErrorCode::DepositExceedsMax);
         }
 
-        let cpi_accounts = Transfer {
-            from: self.user.to_account_info(),
-            to: self.vault.to_account_info(),
-        };
+        let cpi_context = CpiContext::new(
+            self.system_program.key(),
+            Transfer {
+                from: self.user.to_account_info(),
+                to: self.vault.to_account_info(),
+            },
+        );
+        transfer(cpi_context, amount)?;
 
-        let cpi_context = CpiContext::new(self.system_program.key(), cpi_accounts);
+        emit!(Deposited {
+            user: self.user.key(),
+            amount,
+            new_balance,
+        });
 
-        transfer(cpi_context, amount)
+        Ok(())
     }
 }

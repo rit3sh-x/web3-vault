@@ -188,7 +188,6 @@ describe("vault with max amount", () => {
         }
 
         expect(thrownError).toBeDefined()
-        expect(String(thrownError)).toContain("AmountTooMuch")
-        expect(String(thrownError)).toContain("0x1771")
+        expect(String(thrownError)).toContain("DepositExceedsMax")
     })
 })

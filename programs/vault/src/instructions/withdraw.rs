@@ -1,10 +1,8 @@
-use crate::STATE_SEED;
-use crate::{VAULT_SEED, error::ErrorCode};
-use crate::state::VaultState;
-use anchor_lang::{
-    prelude::*,
-    system_program::{transfer, Transfer},
+use crate::{
+    error::ErrorCode, events::Withdrawn, helpers::transfer_out_of_vault, state::VaultState,
+    STATE_SEED, VAULT_SEED,
 };
+use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
@@ -29,22 +27,26 @@ pub struct Withdraw<'info> {
 
 impl<'info> Withdraw<'info> {
     pub fn withdraw(&mut self, amount: u64) -> Result<()> {
-        let balance = self.vault.to_account_info().lamports();
+        require!(amount > 0, ErrorCode::InvalidAmount);
+
+        let balance = self.vault.lamports();
         require!(balance >= amount, ErrorCode::InsufficientFunds);
 
-        let cpi_accounts = Transfer {
-            from: self.vault.to_account_info(),
-            to: self.user.to_account_info(),
-        };
+        transfer_out_of_vault(
+            &self.system_program,
+            &self.vault,
+            self.user.to_account_info(),
+            self.vault_state.key(),
+            self.vault_state.vault_bump,
+            amount,
+        )?;
 
-        let signer_seeds: &[&[&[u8]]] = &[&[
-            VAULT_SEED,
-            self.vault_state.to_account_info().key.as_ref(),
-            &[self.vault_state.vault_bump],
-        ]];
+        emit!(Withdrawn {
+            user: self.user.key(),
+            amount,
+            new_balance: balance - amount,
+        });
 
-        let cpi_context = CpiContext::new_with_signer(self.system_program.key(), cpi_accounts, signer_seeds);
-
-        transfer(cpi_context, amount)
+        Ok(())
     }
 }

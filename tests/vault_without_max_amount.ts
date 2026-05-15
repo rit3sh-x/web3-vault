@@ -187,6 +187,5 @@ describe("vault without max amount", () => {
 
         expect(thrownError).toBeDefined()
         expect(String(thrownError)).toContain("InsufficientFunds")
-        expect(String(thrownError)).toContain("0x1770")
     })
 })

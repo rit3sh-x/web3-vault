@@ -7,27 +7,27 @@ import { solToLamports } from "@/lib/vault"
 type Args = {
     program: Program<Vault> | null
     wallet: AnchorWallet | undefined
-    onDone: () => void
 }
 
-export function useVaultActions({ program, wallet, onDone }: Args) {
+export function useVaultActions({ program, wallet }: Args) {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
+    // No post-tx refetch: useVault subscribes to program events and updates
+    // balances/state/history from those payloads instead.
     const wrap = useCallback(
         async (label: string, fn: () => Promise<unknown>) => {
             setLoading(true)
             setError(null)
             try {
                 await fn()
-                onDone()
             } catch (e) {
                 setError(`${label}: ${String(e)}`)
             } finally {
                 setLoading(false)
             }
         },
-        [onDone]
+        []
     )
 
     const initialize = useCallback(

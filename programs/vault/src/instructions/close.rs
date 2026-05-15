@@ -1,8 +1,7 @@
-use crate::{STATE_SEED, VAULT_SEED, state::VaultState};
-use anchor_lang::{
-    prelude::*,
-    system_program::{transfer, Transfer},
+use crate::{
+    events::VaultClosed, helpers::transfer_out_of_vault, state::VaultState, STATE_SEED, VAULT_SEED,
 };
+use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct Close<'info> {
@@ -29,21 +28,22 @@ pub struct Close<'info> {
 
 impl<'info> Close<'info> {
     pub fn close(&mut self) -> Result<()> {
-        let balance = self.vault.to_account_info().lamports();
+        let balance = self.vault.lamports();
 
-        let cpi_accounts = Transfer {
-            from: self.vault.to_account_info(),
-            to: self.user.to_account_info(),
-        };
+        transfer_out_of_vault(
+            &self.system_program,
+            &self.vault,
+            self.user.to_account_info(),
+            self.vault_state.key(),
+            self.vault_state.vault_bump,
+            balance,
+        )?;
 
-        let signer_seeds: &[&[&[u8]]] = &[&[
-            VAULT_SEED,
-            self.vault_state.to_account_info().key.as_ref(),
-            &[self.vault_state.vault_bump],
-        ]];
+        emit!(VaultClosed {
+            user: self.user.key(),
+            returned: balance,
+        });
 
-        let cpi_context = CpiContext::new_with_signer(self.system_program.key(), cpi_accounts, signer_seeds);
-
-        transfer(cpi_context, balance)
+        Ok(())
     }
 }

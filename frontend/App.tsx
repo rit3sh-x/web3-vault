@@ -4,12 +4,13 @@ import { useVaultActions } from "./hooks/use-vault-actions"
 import { ErrorBanner } from "./components/ui"
 import { VaultStats } from "./components/vault-stats"
 import { AmountForm, CloseCard, InitializeForm } from "./components/vault-forms"
+import { VaultHistory } from "./components/vault-history"
 
 export function App() {
-    const { wallet, program, pdas, state, vaultBalance, userBalance, refresh } =
+    const { wallet, program, pdas, state, vaultBalance, userBalance, history } =
         useVault()
     const { initialize, deposit, withdraw, close, loading, error } =
-        useVaultActions({ program, wallet, onDone: refresh })
+        useVaultActions({ program, wallet })
 
     const initialized = state !== null
 
@@ -62,6 +63,8 @@ export function App() {
                         )}
 
                         {error && <ErrorBanner message={error} />}
+
+                        <VaultHistory history={history} />
                     </>
                 )}
             </main>
